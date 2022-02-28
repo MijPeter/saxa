@@ -1,39 +1,32 @@
-package err
+package httperror
 
 import (
 	"errors"
 	"net/http"
 )
 
-// TODO https://blog.questionable.services/article/http-handler-error-handling-revisited/
-
-type HttpError interface {
-	Status() int
-	Error() error
-}
-
-type httpError struct {
+type HttpError struct {
 	status int
-	err error
+	err    error
 }
 
-func (re *httpError) Status() int {
-	return re.status
+func (he *HttpError) Error() string {
+	return he.err.Error()
 }
 
-func (re *httpError) Err() error {
-	return re.err
+func (he *HttpError) Status() int {
+	return he.status
 }
 
-func New(errMsg string, status int) *HttpError {
-	return &httpError{status, errors.New(errMsg)}
+func New(errMsg string, status int) error {
+	return &HttpError{status, errors.New(errMsg)}
 }
 
 // errors
-var IMAGE_NOT_FOUND = HttpError{
+var IMAGE_NOT_FOUND = &HttpError{
 	http.StatusNotFound,
 	errors.New("image has not been found")}
 
-var IMAGE_NAME_EXISTS = HttpError{
+var IMAGE_NAME_EXISTS = &HttpError{
 	http.StatusConflict,
 	errors.New("image with provided name already exists")}

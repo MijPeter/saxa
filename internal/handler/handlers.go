@@ -6,7 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	image "github.com/MijPeter/saxa/internal/service"
+	"github.com/MijPeter/saxa/internal/error"
+	"github.com/MijPeter/saxa/internal/service"
 )
 
 var routes = []route{
@@ -15,30 +16,26 @@ var routes = []route{
 	newRoute(http.MethodGet, "/image/([^/]+)", getImage), // returns image
 }
 
-func getImages(w http.ResponseWriter, r *http.Request) {
+func getImages(w http.ResponseWriter, r *http.Request) error {
 	// some basic validation needed here
 	// TODO
-	
+
 	images, _ := image.Query()
 	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(images)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	return err
 }
 
-func postImage(w http.ResponseWriter, r *http.Request) {
+func postImage(w http.ResponseWriter, r *http.Request) error {
 	// some basic validation needed here
 	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return err
 	}
 
 	in := r.MultipartForm.File
 	if len(in) != 1 {
-		http.Error(w, "incorrect number of files", http.StatusBadRequest)
-		return
+		return httperror.New("incorrect number of files", http.StatusBadRequest)
 	}
 
 	for name, headers := range in {
@@ -47,39 +44,35 @@ func postImage(w http.ResponseWriter, r *http.Request) {
 		defer y.Close()
 		buf := bytes.NewBuffer(nil)
 		if _, err := io.Copy(buf, y); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return err;
 		}
 
 		image, err := image.Create(name, buf.Bytes())
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+			return err
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		err = json.NewEncoder(w).Encode(image)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return err
 		}
 	}
+	return nil
 }
 
-func getImage(w http.ResponseWriter, r *http.Request) {
+func getImage(w http.ResponseWriter, r *http.Request) error {
 	// some basic validation needed here
 	name := getParam(r, 0)
 
 	image, err := image.Fetch(name)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
+		return err
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(image)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	return err
 }
 
 func Controller(w http.ResponseWriter, r *http.Request) {

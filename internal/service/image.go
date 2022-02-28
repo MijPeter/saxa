@@ -1,39 +1,35 @@
 package image
 
 import (
-	"errors"
-
 	"github.com/MijPeter/saxa/internal/db"
 	"github.com/MijPeter/saxa/internal/error"
 	"github.com/MijPeter/saxa/internal/model"
 )
 
-func Fetch(name string) (*model.Image, err.HttpError) {
+func Fetch(name string) (*model.Image, error) {
 	image, _ := db.GetImage(name)
 
 	if image == nil {
-		return nil, err.IMAGE_NOT_FOUND
+		return nil, httperror.IMAGE_NOT_FOUND
 	}
 
-	errors.New()
-	
 	return image, nil
 }
 
-func Create(name string, content []byte) (*model.Image, err.HttpError) {
+func Create(name string, content []byte) (*model.Image, error) {
 	if imageDb, _ := db.GetImage(name); imageDb != nil {
-		return nil, err.IMAGE_NAME_EXISTS
+		return nil, httperror.IMAGE_NAME_EXISTS
 	}
 
 	image := &model.Image{Name: name, Content: content}
 	return db.SaveImage(name, image)
 }
 
-func Update(name string, newName string, content []byte) (*model.Image, err.HttpError) {
+func Update(name string, newName string, content []byte) (*model.Image, error) {
 	image, _ := db.GetImage(name)
 
 	if image == nil {
-		return nil, err.IMAGE_NOT_FOUND
+		return nil, httperror.IMAGE_NOT_FOUND
 	}
 
 	image.Content = content

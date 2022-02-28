@@ -6,17 +6,23 @@ import (
 	"regexp"
 )
 
-func newRoute(method string, uri string, handler http.HandlerFunc) route {
+type errorHandlerFunc func(http.ResponseWriter, *http.Request) error
+
+func newRoute(
+	method string,
+	uri string,
+	handler errorHandlerFunc) route {
 	return route{method, regexp.MustCompile("^" + uri + "$"), handler}
 }
 
 type route struct {
 	method  string
 	uri     *regexp.Regexp
-	handler http.HandlerFunc
+	handler errorHandlerFunc
 }
 
 type key int
+
 const (
 	paramsKey key = iota
 )
@@ -44,7 +50,11 @@ func router(w http.ResponseWriter, r *http.Request, routes []route) {
 			continue
 		}
 
-		r_.handler(w, r.WithContext(context.WithValue(r.Context(), paramsKey, args[1:])))
+		handleError(
+			w, 
+			r.WithContext(context.WithValue(r.Context(), paramsKey, args[1:])), 
+			r_.handler)
+
 		return
 	}
 

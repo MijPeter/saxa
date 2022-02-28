@@ -1,12 +1,10 @@
 package handler
 
 import (
-	"bytes"
 	"encoding/json"
-	"io"
 	"net/http"
 
-	"github.com/MijPeter/saxa/internal/error"
+	"github.com/MijPeter/saxa/internal/handler/util"
 	"github.com/MijPeter/saxa/internal/service"
 )
 
@@ -17,52 +15,32 @@ var routes = []route{
 }
 
 func getImages(w http.ResponseWriter, r *http.Request) error {
-	// some basic validation needed here
-	// TODO
+	images, err := image.Query()
 
-	images, _ := image.Query()
-	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(images)
-	return err
-}
-
-func postImage(w http.ResponseWriter, r *http.Request) error {
-	// some basic validation needed here
-	err := r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		return err
 	}
 
-	in := r.MultipartForm.File
-	if len(in) != 1 {
-		return httperror.New("incorrect number of files", http.StatusBadRequest)
+	w.Header().Set("Content-Type", "application/json")
+	return json.NewEncoder(w).Encode(images)
+}
+
+func postImage(w http.ResponseWriter, r *http.Request) error {
+	name, bytes, err := util.ParseFile(r)
+	if err != nil {
+		return err
 	}
 
-	for name, headers := range in {
-		x := headers[0]
-		y, _ := x.Open()
-		defer y.Close()
-		buf := bytes.NewBuffer(nil)
-		if _, err := io.Copy(buf, y); err != nil {
-			return err;
-		}
-
-		image, err := image.Create(name, buf.Bytes())
-		if err != nil {
-			return err
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		err = json.NewEncoder(w).Encode(image)
-		if err != nil {
-			return err
-		}
+	image, err := image.Create(name, bytes)
+	if err != nil {
+		return err
 	}
-	return nil
+
+	w.Header().Set("Content-Type", "application/json")
+	return json.NewEncoder(w).Encode(image)
 }
 
 func getImage(w http.ResponseWriter, r *http.Request) error {
-	// some basic validation needed here
 	name := getParam(r, 0)
 
 	image, err := image.Fetch(name)
@@ -70,8 +48,9 @@ func getImage(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(image)
+
+	w.Header().Set("Content-Type", "application/image")
+	_, err = w.Write(image.Content)
 	return err
 }
 

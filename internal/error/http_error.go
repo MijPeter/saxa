@@ -30,3 +30,12 @@ var IMAGE_NOT_FOUND = &HttpError{
 var IMAGE_NAME_EXISTS = &HttpError{
 	http.StatusConflict,
 	errors.New("image with provided name already exists")}
+
+// parser errors
+var INCORRECT_FILE_NUMBER = &HttpError{
+	http.StatusBadRequest,
+	errors.New("incorrect number of files")}
+
+var INCORRECT_FILE_HEADER = &HttpError{
+	http.StatusBadRequest,
+	errors.New("wrong multipart file headers")}

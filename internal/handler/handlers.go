@@ -2,8 +2,10 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
+	"github.com/MijPeter/saxa/db"
 	"github.com/MijPeter/saxa/internal/handler/util"
 	"github.com/MijPeter/saxa/internal/service"
 )
@@ -48,12 +50,14 @@ func getImage(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-
 	w.Header().Set("Content-Type", "application/image")
 	_, err = w.Write(image.Content)
 	return err
 }
 
 func Controller(w http.ResponseWriter, r *http.Request) {
+	if db.DB == nil {
+		fmt.Printf("ASDF")
+	}
 	router(w, r, routes)
 }

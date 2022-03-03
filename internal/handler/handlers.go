@@ -2,15 +2,14 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
-	"github.com/MijPeter/saxa/db"
 	"github.com/MijPeter/saxa/internal/handler/util"
-	"github.com/MijPeter/saxa/internal/service"
+	image "github.com/MijPeter/saxa/internal/service"
 )
 
 var routes = []route{
+	newRoute(http.MethodOptions, "*", options),
 	newRoute(http.MethodGet, "/image", getImages),        // returns json list of image names
 	newRoute(http.MethodPost, "/image", postImage),       // creates new image
 	newRoute(http.MethodGet, "/image/([^/]+)", getImage), // returns image
@@ -55,9 +54,18 @@ func getImage(w http.ResponseWriter, r *http.Request) error {
 	return err
 }
 
-func Controller(w http.ResponseWriter, r *http.Request) {
-	if db.DB == nil {
-		fmt.Printf("ASDF")
+func options(w http.ResponseWriter, r *http.Request) error {
+	// Depending on the Method different kind of Headers can be set
+
+	switch method := r.Header.Get("Access-Control-Request-Method"); method {
+	case http.MethodPost:
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	}
+	return nil
+}
+
+func Controller(w http.ResponseWriter, r *http.Request) {
+	// this header is only for running simple app from localhost
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 	router(w, r, routes)
 }
